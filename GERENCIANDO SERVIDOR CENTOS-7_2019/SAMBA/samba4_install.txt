@@ -1,0 +1,245 @@
+1)
+yum update -y
+reboot
+
+2)
+rpm -ivh http://mirror.globo.com/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm
+yum repolist
+
+3)
+yum groupinstall 'Development Tools'
+
+4)
+yum install -y wget vim net-tools
+
+5)
+vim /etc/sysconfig/network-scripts/ifcfg-enp0s8
+  >>NM_CONTROLLED=no
+  >>USERCTL=no
+:wq 
+reboot
+
+6)
+vim /etc/hosts
+  >> 192.168.5.5 servidor.samba.local servidor
+:wq
+
+7) 
+vim /etc/sysconfig/network
+  >> NETWORKING=yes
+  >> HOSTNAME=servidor
+:wq
+
+8)
+/etc/init.d/network restart
+
+9) melhora swap
+vim /etc/sysctl.conf
+  >> vm.swappiness=0
+
+10) disabilitar alguns serviços para não prejudicar o samba4
+
+vim /etc/selinux/config
+  >> SELINUX=enforcing para   SELINUX=disabled
+:wq
+  >> setenforce 0
+  >> service firewalld stop
+  >> service iptables stop
+  >> systemctl disable firewalld
+  >> systemctl disable iptables
+  
+11)
+yum install -y attr bind-utils docbook-style-xsl gcc gdb krb5-workstation \
+       libsemanage-python libxslt perl perl-ExtUtils-MakeMaker \
+       perl-Parse-Yapp perl-Test-Base pkgconfig policycoreutils-python \
+       python2-crypto gnutls-devel libattr-devel keyutils-libs-devel \
+       libacl-devel libaio-devel libblkid-devel libxml2-devel openldap-devel \
+       pam-devel popt-devel python-devel readline-devel zlib-devel systemd-devel \
+       lmdb-devel jansson-devel gpgme-devel pygpgme libarchive-devel
+
+12)
+cd /opt
+wget https://download.samba.org/pub/samba/stable/samba-4.9.6.tar.gz
+ou
+wget https://download.samba.org/pub/samba/samba-latest.tar.gz
+
+13)
+tar -zxvf  samba-latest.tar.gz
+cd samba-latest
+cd samba-4.9.6
+
+14)
+./configure.developer
+
+15)
+make
+make install
+
+16) 
+/usr/local/samba/bin/samba-tool domain provision --use-rfc2307 --interactive
+
+17)
+***Realm [SAMBA.LOCAL] = [ENTER]
+***Domain [SAMBA] = [ENTER]
+***Server Role [dc] = [ENTER]
+***DNS backend = BIND9_DLZ
+***colocar senha de administrator e confirmar
+
+18)
+/usr/local/samba/sbin/samba
+pkill samba
+
+19)
+vim /etc/rc.d/init.d/samba4
+============================================================================
+# COMEÇO DO SCRIPT DE INICIALIZAÇÃO DO SAMBA
+#!/bin/bash
+#
+# samba-ad-dc	This shell script takes care of starting and stopping
+# 		samba AD daemons.
+#
+# chkconfig: - 58 74
+# description: Samba Active Directory Domain Controller
+
+### BEGIN INIT INFO
+# Provides: samba-ad-dc
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Should-Start: $syslog $named
+# Should-Stop: $syslog $named
+# Short-Description: start and stop samba-ad-dc
+# Description: Samba Active Directory Domain Controller
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+ 
+# Source networking configuration.
+. /etc/sysconfig/network
+ 
+prog=samba
+prog_dir=/usr/local/samba/sbin/
+lockfile=/var/lock/subsys/$prog
+ 
+start() {
+	[ "$NETWORKING" = "no" ] && exit 1
+	echo -n $"Starting Samba AD DC: "
+	daemon $prog_dir/$prog -D
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch $lockfile
+	return $RETVAL
+}
+
+ stop() {
+	[ "$EUID" != "0" ] && exit 4
+	echo -n $"Shutting down Samba AD DC: "
+	killproc $prog_dir/$prog
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f $lockfile
+	return $RETVAL
+}
+ 
+case "$1" in
+start)
+	start
+	;;
+stop)
+	stop
+	;;
+status)
+	status $prog
+	;;
+restart)
+	stop
+	start
+	;;
+*)
+	echo $"Usage: $0 {start|stop|status|restart}"
+	exit 2
+esac
+# FIM DO SCRIPT DO SAMBA
+===========================================================================
+
+20)
+chmod 755 /etc/rc.d/init.d/samba4
+
+21) 
+ln -s /etc/rc.d/init.d/samba4 /etc/rc3.d/S80samba4
+
+22) 
+chkconfig --add samba4
+chkconfig samba4 on
+service samba4 restart
+
+23)
+/usr/local/samba/bin/smbclient //localhost/netlogon -Uadministrator%Sua Senha
+
+24)
+yum install -y bind bind-sdb
+
+25)
+vim /etc/named.conf
+
+26)
+incluir no fim do arquivo o seguinte caminho:
+include "/usr/local/samba/bind-dns/named.conf";
+
+27) 'verifica versao bind'
+yum info bind
+
+28)
+vim /usr/local/samba/bind-dns/named.conf
+
+29)
+procura a versao do bind no inicio e descomentar na seção dlz "AD DNS ZON"
+abaixo do #For BIND 9.9.x
+
+30)
+chown named.named /var/named/
+
+31)'Reprovisiona novamente'
+/usr/local/samba/bin/samba-tool domain provision --use-rfc2307 interactive
+
+32)
+service samba4 restart
+
+33)
+chown named.named /var/named/
+
+service named restart
+
+34) teste dns samba
+host -t SRV _ldap._tcp.samba.local.
+host -t SRV _kerberos._udp.samba.local.
+host -t  A samba.local.
+
+35) configuração do kerberos
+cp /etc/krb5.conf /etc/krb5.conf.original
+cp /usr/local/samba/private/krb5.conf /etc/krb5.conf
+
+kinit administrator
+**coloque sua senha de administrator@SAMBA.LOCAL
+
+36) ver quem tem ticket
+klist -e
+
+37) vamos pôr dns de forma dinamica
+
+vim /etc/named.conf
+
+***embaixo do options colocamos o seguinte:
+
+tkey-gssapi-keytab "/usr/local/samba/private/dns.keytab";
+
+38) 
+chgrp named /usr/local/samba/private/dns.keytab
+chmod g+r /usr/local/samba/private/dns.keytab
+
+39) 
+systemctl enable named.service
+/usr/local/samba/sbin/samba_dnsupdate --verbose
+
+
+

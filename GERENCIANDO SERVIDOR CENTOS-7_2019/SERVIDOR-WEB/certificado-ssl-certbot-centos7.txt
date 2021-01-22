@@ -1,0 +1,103 @@
+FREE SSL CERTIFICATE IN CENTOS 7
+
+
+PRÉ-REQUESITOS:
+INTERNET, IP FIXO E DNS VÁLIDA
+
+
+
+yum install -y httpd mod_ssl
+
+systemctl start httpd
+
+systemctl enable httpd
+
+systemctl is-active httpd
+
+echo demo > /var/www/html/index.html
+
+grep -ri DocumentRoot /etc/httpd
+
+firewall-cmd --permanent --zone=public --add-service=http
+
+firewall-cmd --permanent --zone=public --add-service=https
+
+firewall-cmd --reload
+
+curl http://demo.domain.com => vai aparecer o site
+
+curl https://demo.domain.com => não aparecerá o site
+
+yum install -y epel-release
+
+yum install -y certbot 
+
+yum search certbot => procura por pacotes do certbot,vemos dependencias que o pacote usa.
+		      ->Nesse caso como usamos apache, instalaremos a biblioteca python2-certbot-apache.
+
+yum info certbot => informações gerais sobre o pacote
+
+yum install -y python2-certbot-apache
+
+certbot --apache -d demo.domain.com
+
+ESCREVA AS OPÇÕES:
+
+[WRITE] O seu email
+[PRESS]   A
+[PRESS]	  1 
+[PRESS]	  1
+[PRESS]	  2
+
+vi /etc/httpd/conf.d/ssl.conf
+
+[PRESS] esc 
+
+/SSLProto
+
+[EDIT] SSLProtocol all -SSLV2  -SSLV3
+
+[ADD] SSLCiphersuite EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH
+
+[PRESS] ESC :wq
+
+apachectl configtest => verifica se o httpd.conf está OK!
+
+systemctl restart httpd
+
+certbot renew
+
+
+
+[ATENÇÃO] PARA PROGRAMAR A RENOVAÇÃO PODE SER PELO CRONTAB:
+
+crontab -e
+
+#Renew Daily
+
+#0 0 * * * /usr/bin/certbot renew &> /var/log/certbot.cronlog
+
+
+
+[ESTRUTURA DO CRONTAB]:
+
+(minuto[0-59]) (hora[0-23]) (dia[1-31]) (mês[1-12 ou jan,feb,mar,apr...]) (dia de semana[0-6]-[domingo=0 ou 7] ou [sun,mon,tue,wed,thu,fri,sat]) (username) (command to be execute)  
+
+
+
+
+[ATENÇÃO] OU PELO PRÓPRIO SERVIÇO QUE VEM JUNTO AO CERTBOT, CHAMADO DE TIMER:
+
+systemctl start certbot-renew.service
+
+systemctl start certbot-renew.timer
+
+systemctl enable certbot-renew.timer
+
+systemctl list-timers
+
+
+
+[ATENÇÃO] 
+
+SÓ PODE EXISTIR UM PROGRAMADOR DE EVENTO, OU SEJA, USE O CRONTAB OU O TIMER DO CERTBOT.  	

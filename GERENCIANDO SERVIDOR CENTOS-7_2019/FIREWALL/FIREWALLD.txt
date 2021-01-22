@@ -1,0 +1,171 @@
+# PRA SABER SE O FIREWALLD ESTÁ EM EXECUÇÃO DIGITE:
+>>(COMANDO) sudo firewall-cmd --state
+
+# PARA CHAMAR AJUDA DIGITE: 
+>>(COMANDO) firewall-cmd --help
+
+# CRIANDO NOVAS ZONAS DE FIREWALL NO FIREWALLD
+>>(COMANDO) sudo firewall-cmd --permanent --new-zone=publicweb
+>>(COMANDO) sudo firewall-cmd --permanent --new-zone=privateDNS
+
+# VOCÊ PODE VERIFICAR AS ZONAS PERMANENTES:
+>>(COMANDO) sudo firewall-cmd --permanent --get-zones
+
+#SAIDA
+#block dmz drop external home internal privateDNS public publicweb trusted work
+
+# COM O COMANDO ABAIXO, ELAS NÃO APARECERIAM AINDA:
+
+>>(COMANDO) firewall-cmd --get-zones
+
+#SAIDA 
+#block dmz drop external home internal public trusted work
+
+# POREM, SE FIZERMOS O RELOAD DAS REGRAS ENTÃO ELAS APARECEM:
+
+>>(COMANDO) sudo firewall-cmd --reload
+>>(COMANDO) firewall-cmd --get-zones
+
+#SAIDA
+#block dmz drop external home internal privateDNS public publicweb trusted work
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+As zonas são:
+
+drop (descartar)
+Todos os pacotes recebidos são descartados sem resposta. Apenas tráfego de saída é permitido.
+
+
+block (bloquear)
+Todas as conexões de entrada são rejeitadas. Apenas conexões que tem origem no servidor são permitiras.
+
+
+public (pública)
+Não confie em nenhum endereço da rede local. Apenas algumas conexões de entrada são aceitas, desde que sejam consideradas seguras.
+
+
+external (externa)
+Nível semelhante ao public, mas é normalmente usado em roteadores no modo masquerading.
+
+
+dmz (Demilitarized Zone, ou zona desmilitarizada) 
+Usada para garantir acesso a algumas (mas não a todas) as conexões (ou serviços). Apenas algumas conexões de entrada específicas são aceitas.
+
+
+work (trabalho)
+Confie (mas não completamente) nos hosts da rede. Apenas algumas conexões de entrada são aceitas.
+
+
+home (casa)
+Os hosts são confiáveis, mas ainda sim escolha quais conexões de entrada aceitar.
+
+
+internal (interna)
+Semelhante a zona work.
+
+
+trusted (confiada)
+Confie em todas as conexões de rede.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Ver a lista das zonas em uso:
+
+>>(COMANDO) firewall-cmd --get-active-zones
+public
+  interfaces: eno16777736
+
+
+#AGORA VOCÊ PODE COMEÇAR A CRIAR SUAS PŔOPRIAS ZONAS E ADICIONAR AS SUAS PRÓPRIAS REGRAS A ELAS:
+
+>>(COMANDO) sudo firewall-cmd --zone=publicweb --permanent --add-service=ssh
+>>(COMANDO) sudo firewall-cmd --zone=publicweb --permanent --add-service=http
+>>(COMANDO) sudo firewall-cmd --zone=publicweb --permanent --add-service=https
+>>(COMANDO) sudo firewall-cmd --zone=publicweb --list-all
+
+# LISTA OS SERVIÇOS HABILITADOS NA ZONA publicweb
+>>(COMANDO) sudo firewall-cmd --zone=publicweb --list-services
+
+#output
+>> http https ssh
+
+# PARA TORNAR UMA ZONA A SUA ZONA DEFAULT, POIS A ZONA POR PADRÃO É A PUBLICA,
+# BASTA DIGITAR O COMANDO ABAIXO:
+>>(COMANDO) sudo firewall-cmd --set-default-zone=publicweb
+
+
+#Para associar um source, ou uma origem, a uma zona (de forma permanente):
+>>(COMANDO) firewall-cmd --permanent --zone=trusted --add-source=192.168.1.0/24
+success
+
+#Isso diz que qualquer servidor com um endereço IP na faixa 192.168.1.x vai ser anexado a zona trusted.
+#Você pode remover um source, ou uma origem, que foi adicionada anteriormente usando a opção --remove-source, ou alterar a zona com --change-source.
+
+
+# PARA COMPARTILHAR A INTERNET NA REDE E SERVIDOR WEB
+>>(COMANDO) firewall-cmd --permanent --add-service=http
+>>(COMANDO) firewall-cmd --permanent --add-service=https
+>>(COMANDO) firewall-cmd --permanent --add-masquerade
+
+# No entando estas formas não são persistentes. Para fazer uma alteração persistente, edite o arquivo /etc/sysctl.conf e adicione a linha:
+>>(LINHA) net.ipv4.ip_forward=1
+
+# para carregar a nova configuração sem reiniciar.
+>>(COMANDO) sysctl -p
+
+------------------------------------------------------------------------
+
+# OUTRA FORMA ANTIGA DE HABILITAR O ROTEAMENTO DA INTERNET
+
+# Criando script, dentro do /usr/local/bin:
+
+>>(COMANDO) vim /usr/local/bin/firewall
+
+#### INICIO ####
+#!/bin/bash
+
+    echo "Ativando compartilhamento "
+
+# Ativando Roteamento de pacote
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+
+# NAT
+    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+    echo " Compartilhamento ativado"
+#### FIM ####
+
+#Salve e saia do arquivo. Dê permissão de execução no script com o comando:
+
+>>(COMANDO) chmod +x /usr/local/bin/firewall
+
+# Agora vamos colocar esse script para ser iniciado durante o boot. Edite o arquivo /etc/rc.local:
+
+>>(COMANDO) vim /etc/rc.local
+
+# E adicione a seguinte linha em seu final:
+
+/usr/local/bin/firewall
+
+#Salve e saia do arquivo.
+#Pronto... Internet será roteada toda vez que o micro for reinicializado! 
+------------------------------------------------------------------------------------------------------------------
+
+# Verificando Regras
+# O seguinte comando pode ser usado para verificar se a porta está aberta, ele retornará um simples sim ou não:
+
+>>(COMANDO) firewall-cmd --zone=public --query-port=80/tcp
+
+# Verifique se a porta de serviço foi aberta:
+
+>>(COMANDO) firewall-cmd --zone=public --query-service=http
+
+# Para remover a porta ou o serviço que você adicionou.
+
+>>(COMANDO) firewall-cmd --zone=public --remove-port=80/tcp
+
+# ou
+
+>>(COMANDO) firewall-cmd --zone=public --remove-service=http
+
+

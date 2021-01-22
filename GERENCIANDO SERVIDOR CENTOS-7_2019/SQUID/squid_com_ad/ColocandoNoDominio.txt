@@ -1,0 +1,34 @@
+FAZENDO INTEGRAÇÃO COM O AD ATRAVÉS DO WINBIND:
+
+[root@servidor ~]# yum install -y realmd samba-common samba-winbind-clients samba-winbind oddjob-mkhomedir oddjob
+
+[root@servidor ~]# realm join --client-software=winbind -U administrator dominio.local
+	
+
+PARA TESTAR SE VOCÊ ESTÁ SE RELACIONANDO COM O AD SIGA OS COMANDOS ABAIXO:
+
+[root@servidor ~]# systemctl start winbind 
+[root@servidor ~]# systemctl enable winbind 
+[root@servidor ~]# systemctl start smb
+[root@servidor ~]# systemctl enable smb  
+[root@servidor ~]# systemctl start nmb
+[root@servidor ~]# systemctl enable nmb
+
+[root@servidor ~]# wbinfo -t 
+COMANDO VERIFICA SE VOCÊ TEM COMUNICAÇÃO COM O AD, SE SIM ENTÃO, ELE RETORNA UMA MENSAGEM DE SUCESSO
+
+[root@servidor ~]# wbinfo -u
+ESTE COMANDO RETORNA OS USUARIOS DO AD QUE ESTÃO POR PADRAO NA PASTA Users DENTRO DO ACTIVE DIRECTORY
+
+[root@servidor ~]# wbinfo -g
+ESTE COMANDO RETORNA OS GRUPOS DO AD QUE ESTÃO POR PADRAO NA PASTA Users DENTRO DO ACTIVE DIRECTORY
+
+Obs:
+SE POR ACASO VOCÊ TENTOU INICIAR O WINBIND E NÃO CONSEGUIU, É BEM PROVAVEL QUE SEJA POR CAUSA 
+DE PERMISSÃO NO SEGUINTE DIRETÓRIO:
+
+[root@servidor ~]# ls -l /var/lib/samba/winbindd_privileged 
+
+POR FAVOR ENTÃO UTILIZE O SEGUINTE COMANDO PARA ALTERAR O GRUPO:
+
+[root@servidor ~]# chown -R root:wbpriv /var/lib/samba/winbindd_privileged 

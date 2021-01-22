@@ -1,0 +1,281 @@
+#!/bin/bash
+################
+## INTERFACES ##
+################
+REDE='eth0'
+INTERNET='eth1'
+REDE_INT='192.168.5.0/24'
+##########################
+echo "SUBINDO INTERFACES"...............[ok]
+############################
+## FLUSHANDO TODAS REGRAS ##
+############################
+iptables -F
+iptables -t nat -F
+iptables -X
+iptables -t mangle -F
+iptables -t mangle -X
+##############################
+echo "FLUSHANDO TODAS AS REGRAS"...........[ok]
+#########################
+## DEFINANDO POLITICAS ##
+#########################
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -t nat -P PREROUTING ACCEPT
+iptables -t nat -P POSTROUTING ACCEPT
+iptables -t nat -P OUTPUT ACCEPT
+#######################################
+echo "DEFININDO POLITICAS"...........[ok]
+########################
+## CARREGANDO MÓDULOS ##
+########################
+/sbin/modprobe ip_tables
+/sbin/modprobe ip_conntrack
+/sbin/modprobe ip_nat_ftp
+/sbin/modprobe ip_conntrack_ftp
+/sbin/modprobe iptable_nat
+/sbin/modprobe iptable_mangle
+/sbin/modprobe ipt_mark
+/sbin/modprobe ipt_MARK
+/sbin/modprobe ipt_LOG
+/sbin/modprobe ipt_REJECT
+/sbin/modprobe ipt_MASQUERADE
+###############################
+echo "CARREGANDO MODULOS"...........[ok]
+
+######################
+## ATIVA ROTEAMENTO ##
+######################
+## HABILITA O ROTEAMENTO ##
+echo "1" > /proc/sys/net/ipv4/ip_forward
+###########################
+echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+###########################
+# PROTECAO CONTRA RESPONSES BOGUS
+echo "1" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
+###########################
+## NAO RESPONDE PING ##
+echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all
+########################
+# PROTECAO CONTRA SYNC FLOOD
+echo "1" > /proc/sys/net/ipv4/tcp_syncookies
+########################
+# PROTECAO CONTRA OVERFLOW
+echo "1" > /proc/sys/net/ipv4/tcp_abort_on_overflow
+########################
+# PROTECAO CONTRA IP SPOOFING
+echo "1" > /proc/sys/net/ipv4/conf/all/rp_filter
+##############################
+echo "ATIVA ROTEAMENTO"...........[ok]
+###################
+## ENTRADA INPUT ##
+###################
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -p icmp -m limit --limit 3/m --limit-burst 3 -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+#####################
+echo "ENTRADA INPUT"...........[ok]
+#######################################################################
+# REJEITAR CONEXOES NOVAS (NEW) E INVALIDAS (INVALID) DE 
+# PACOTES COM DESTINO A MAQUINA LOCAL OU QUEM DEVE SER REPASSADO ETH1 ##
+########################################################################
+iptables -A INPUT -i eth1 -m state --state NEW,INVALID -j DROP
+iptables -A FORWARD -i eth1 -m state --state NEW,INVALID -j DROP
+############################################################################
+echo "REJEITA CONEXOES NOVAS E INVALIDAS"...........[ok]
+
+###################
+## OUTPUT ##
+###################
+iptables -A OUTPUT -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+#####################################################################
+echo "OUTPUT"...........[ok]
+
+#####################
+## PROTOCOLO ICMP ##
+#####################
+iptables -A INPUT -p ICMP -j ACCEPT
+iptables -A INPUT -p ICMP -s 0/0 --icmp-type 0 -j ACCEPT
+iptables -A INPUT -p ICMP -s 0/0 --icmp-type 3 -j ACCEPT
+iptables -A INPUT -p ICMP -s 0/0 --icmp-type 8 -j ACCEPT
+iptables -A INPUT -p ICMP -s 0/0 --icmp-type source-quench -j ACCEPT
+iptables -A INPUT -p ICMP -s 0/0 --icmp-type parameter-problem -j ACCEPT
+#############################################################################
+echo "PROTOCOLO ICMP"...........[ok]
+
+#######################################
+## LIMITE CONTRA PING DA MORTE E DoS ##
+#######################################
+iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s -j ACCEPT
+iptables -A INPUT -p icmp --icmp-type echo-reply -m limit --limit 1/s -j DROP
+## FORWARD ##
+iptables -A FORWARD -p icmp --icmp-type echo-request -m limit --limit 1/s -j ACCEPT
+iptables -A FORWARD -p icmp --icmp-type echo-reply -m limit --limit 1/s -j DROP
+###############################################################################'
+echo "LIMITE CONTRA PING DA MORTE"...........[ok]
+
+##########################
+## TABELA NAT ##
+##########################
+### DIRECIONAMENTO SQL 1433 ##
+iptables -t nat -A PREROUTING -i eth1 -p tcp --dport 1433 -j DNAT --to 192.168.0.101
+iptables -t nat -A PREROUTING -i eth1 -p udp --dport 1433 -j DNAT --to 192.168.0.101
+
+###############################
+## ATIVA O MASCARAMENTO (NAT) ##
+iptables -t nat -A POSTROUTING -s 192.168.5.0/255.255.255.0 -o eth1 -j MASQUERADE
+##########################################################
+echo "ATIVA O MASCARAMENTO NAT"...........[ok]
+###########################
+## Conectividade Social ###
+###########################
+iptables -t nat -I POSTROUTING -s 192.168.5.230 -j MASQUERADE
+iptables -t nat -I PREROUTING -s 192.168.5.230 -j ACCEPT
+#####################################################
+echo "CONECTIVIDADE SOCIAL"...........[ok]
+#########################
+## Abre para Redelocal ##
+#########################
+iptables -A INPUT -p tcp --syn -s 192.168.5.0/255.255.255.0 -j ACCEPT
+###################################
+echo "ABRE SYN PARA REDE LOCAL"...........[ok]
+
+##################
+## REGRAS SQUID ##
+##################
+## ABRE PORTA DO SQUID ##
+iptables -A INPUT -i eth1 -p tcp --dport 3128 -j ACCEPT
+##########################
+echo "ABRE PORTA DO SQUID"...........[ok]
+
+#####################################
+## DIRECIONA DA 80 PARA 3128 SQUID ##
+#####################################
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3128
+############################################
+echo "DIRECIONA 80 PARA 3128 SQUID"...........[ok]
+
+#########
+## SSH ##
+#########
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -s $REDE_INT -i eth1 -j ACCEPT
+iptables -A INPUT -p tcp --sport 22 -s $REDE_INT -i eth1 -j ACCEPT
+###################################################################
+echo "LIBERA SSH"...........[ok]
+
+###############
+### FORWARD ##
+###############
+## LIBERA A ENTRADA DE CONEXOES INICADAS PELA MAQUINA ##
+iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+############################################################################
+echo "LIBERA CONEXOES ESTABELECIDAS FORWARD"...........[ok]
+
+###############
+### DESCARTANDO PACOTES INVALIDOS PARA ENVIO ##
+###############
+iptables -A FORWARD -m state --state INVALID -j DROP
+####################################
+## SYN ACK AND FIN ## SHEALT SCAN ##
+####################################
+iptables -A FORWARD -p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j ACCEPT
+####################################
+echo "SYN ACK # SHELT SCAN"...........[ok]
+
+######################
+## CONTRA SYN-FLOOD ##
+######################
+#iptables -A FORWARD -p tcp -m limit --limit 1/s -j ACCEPT
+iptables -A FORWARD -p tcp --syn -m limit --limit 10/s -j ACCEPT
+iptables -A FORWARD -p tcp --syn -j DROP
+#######################
+echo "PROTECAO CONTRA SYN-FLOOD"...........[ok]
+###############################
+## PORTAS 25, 110 , 443, 995 ##
+###############################
+iptables -A FORWARD -p tcp --dport 25 -s $REDE_INT -j ACCEPT
+#
+iptables -A FORWARD -p tcp --dport 110 -s $REDE_INT -j ACCEPT
+#
+iptables -A FORWARD -p tcp --dport 443 -s $REDE_INT -j ACCEPT
+#
+iptables -A FORWARD -p tcp --dport 995 -s $REDE_INT -j ACCEPT
+####################################
+echo "LIBERACAO PORTAS 25, 110, 443 FORWARD"...........[ok]
+##########################
+## Conectividade Social ##
+##########################
+iptables -I FORWARD -s 192.168.5.230 -d 0/0 -j ACCEPT
+iptables -I FORWARD -d 192.168.5.230 -s 0/0 -j ACCEPT
+#####################################################
+echo "CONECTIVIDADE SOCIAL FORWARD"...........[ok]
+
+############################
+## PROTECAO CONTRA TRINOO ##
+############################
+iptables -N TRINOO
+iptables -A TRINOO -j DROP
+iptables -A INPUT -p tcp -i eth1 --dport 27444 -j TRINOO
+iptables -A INPUT -p tcp -i eth1 --dport 27665 -j TRINOO
+iptables -A INPUT -p tcp -i eth1 --dport 31335 -j TRINOO
+iptables -A INPUT -p tcp -i eth1 --dport 34555 -j TRINOO
+iptables -A INPUT -p tcp -i eth1 --dport 35555 -j TRINOO
+## PROTECAO CONTRA TINOO FORWARD ##
+iptables -A FORWARD -p tcp -i eth1 --dport 27444 -j TRINOO
+iptables -A FORWARD -p tcp -i eth1 --dport 27665 -j TRINOO
+iptables -A FORWARD -p tcp -i eth1 --dport 31335 -j TRINOO
+iptables -A FORWARD -p tcp -i eth1 --dport 34555 -j TRINOO
+iptables -A FORWARD -p tcp -i eth1 --dport 35555 -j TRINOO
+#############################
+echo "PROTECAO CONTRA TRINOO"...........[ok]
+
+############################
+## PROTECAO CONTRA WORMS ##
+############################
+iptables -A FORWARD -p tcp --dport 135 -i eth1 -j REJECT
+#############################
+echo "PROTECAO CONTRA WORMS"...........[ok]
+#############################
+## PROTECAO CONTRA TROJANS ##
+#############################
+iptables -N TROJAN
+iptables -A TROJAN -j DROP
+iptables -A INPUT -p tcp -i eth1 --dport 666 -j TROJAN
+iptables -A INPUT -p tcp -i eth1 --dport 4000 -j TROJAN
+iptables -A INPUT -p tcp -i eth1 --dport 6000 -j TROJAN
+iptables -A INPUT -p tcp -i eth1 --dport 6006 -j TROJAN
+iptables -A INPUT -p tcp -i eth1 --dport 16660 -j TROJAN
+## FORWARD PROTECAO TROJAN ##
+iptables -A FORWARD -p tcp -i eth1 --dport 666 -j TROJAN
+iptables -A FORWARD -p tcp -i eth1 --dport 4000 -j TROJAN
+iptables -A FORWARD -p tcp -i eth1 --dport 6000 -j TROJAN
+iptables -A FORWARD -p tcp -i eth1 --dport 6006 -j TROJAN
+iptables -A FORWARD -p tcp -i eth1 --dport 16660 -j TROJAN
+##################################
+echo "PROTECAO CONTRA TROJANS"...........[ok]
+
+#############################
+## PROTECAO CONTRA PORTMAP ##
+#############################
+iptables -A INPUT -p tcp -i eth1 --syn --dport 111 -j DROP
+#############################
+echo "PROTECAO CONTRA PORTMAP"...........[ok]
+
+##############################
+## PROTECAO CONTRA SCANNERS ##
+##############################
+iptables -N SCANNER
+iptables -A SCANNER -m limit --limit 15/m -j LOG --log-level 6 --log-prefix "FIREWALL: port scaner:"
+iptables -A SCANNER -j DROP
+iptables -A INPUT -p tcp --tcp-flags ALL FIN,URG,PSH -i eth1 -j SCANNER
+iptables -A INPUT -p tcp --tcp-flags ALL NONE -i eth1 -j SCANNER
+iptables -A INPUT -p tcp --tcp-flags ALL ALL -i eth1 -j SCANNER
+iptables -A INPUT -p tcp --tcp-flags ALL FIN,SYN -i eth1 -j SCANNER
+iptables -A INPUT -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -i eth1 -j SCANNER
+iptables -A INPUT -p tcp --tcp-flags SYN,RST SYN,RST -i eth1 -j SCANNER
+iptables -A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -i eth1 -j SCANNER
+####################################
+echo "PROTECAO CONTRA SCANNERSP"...........[ok]

@@ -1,0 +1,37 @@
+
+use-host-decl-names on;
+option time-servers clock.redhat.com;
+allow unknown-clients;
+default-lease-time 120;
+ddns-domainname "spew.com.";
+ddns-rev-domainname "in-addr.arpa.";
+ddns-update-style interim;
+ddns-updates on;
+allow client-updates;
+
+max-lease-time 120;
+
+option domain-name "spew.com.";
+
+subnet 192.168.1.128 netmask 255.255.255.128 {
+authoritative;
+allow client-updates;
+allow unknown-clients;
+ddns-updates on;
+ddns-rev-domainname "in-addr.arpa.";
+ddns-domainname "spew.com.";
+range 192.168.1.133 192.168.1.145;
+option routers 192.168.1.129;
+option broadcast-address 192.168.1.255;
+option domain-name-servers 192.168.1.130, 192.168.1.132, 192.168.1.131;
+option netbios-name-servers 192.168.1.132, 192.168.1.131;
+option netbios-node-type 8;
+option netbios-scope "";
+}
+zone spew.com. {
+primary 192.168.1.130;
+}
+zone 1.168.192.in-addr.arpa. {
+primary 192.168.1.130;
+}
+}

@@ -1,0 +1,57 @@
+editar o arquivo /etc/dhcp/dhcpd.conf
+>> ddns-update-style interim;
+>> authoritative;
+>> ignore client-updates;
+
+#Importa chave segurança 
+ Esc :r /etc/rndc.key
+
+ key "chave" {
+    algorithm hmac-md5;
+    secret "IDSI/F/2DFGDDDGDD+A==";
+};
+
+# AGORA DENTRO DA ZONA DE SUB REDE
+>> ddns-domainname "dominio.local";
+>> ddns-rev-domainname "in-addr.arpa";
+>> zone dominio.local {
+    primary 192.168.3.1;
+    key "chave";
+}
+
+zone 3.168.192.in-addr.arpa {
+    primary 192.168.3.1;
+    key "chave";
+}
+
+>> ESC :wq
+
+---------------------------------------------------------
+
+# Editar o arquivo /etc/named.rfc1912.zones
+
+# Importar tambem a chave
+
+ Esc :r /etc/rndc.key
+
+#colocar o mesmo no na chave da qual definimos
+
+key "chave" {
+    algorithm hmac-md5;
+    secret "IDSI/F/2DFGDDDGDD+A==";
+};
+
+# Na zona direta e reversa dns editar o allow-update{ none;};
+>> allow-update{key "chave";};
+
+# Entrar no diretório /var/named
+# Mover os arquivos de zona dominio.local.zone e rev, 
+# para a pasta dynamic
+
+>> mv dominio.local.zone dynamic/
+>> cd dynamic/
+>> chown named:named dominio.local.*
+
+# Como movemos para outro diretório precisaremos editar o file da zona 
+# do arquivo /etc/named.rfc1912.zones
+

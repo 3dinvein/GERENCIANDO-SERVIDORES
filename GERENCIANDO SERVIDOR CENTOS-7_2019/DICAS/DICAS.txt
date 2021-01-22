@@ -1,0 +1,63 @@
+# INSTALA OS COMANDOS DE REDE DA VESÃO ANTERIOR DO CENTOS 7, 
+# EXEMPLO: ifconfig e o route -n
+>>(COMANDO) yum -y install net-tools
+
+#Mostrar configuração de IP sem ifconfig:
+>>(COMANDO) ip addr show
+
+#Mostrar configuração de Roteamento(Gateway):
+>>(COMANDO) ip route show
+
+# Adicionar o gateway 10.1.1.1 para placa de rede ens160:
+>>(COMANDO) ip route add default via 10.1.1.1 dev ens160
+
+# A SINTAX BÁSICA SÃO ESTAS:
+>>(COMANDO) ip route add {NETWORK/MASK} via {GATEWAYIP}
+>>(COMANDO) ip route add {NETWORK/MASK} dev {DEVICE}
+>>(COMANDO) ip route add default {NETWORK/MASK} dev {DEVICE}
+>>(COMANDO) ip route add default {NETWORK/MASK} via {GATEWAYIP}
+
+
+#Configuração do DNS:
+>>(COMANDO) echo “nameserver 8.8.8.8″ >> /etc/resolv.conf
+
+# PARA CONFERIR O FUSO HORARIO 
+>>(COMANDO) timedatectl
+
+# PARA LISTAR AS ZONAS
+>>(COMANDO) timedatectl list-timezones
+
+# PARA AJUSTAR O FUSO HORARIO 
+>>(COMANDO) timedatectl set-timezone America/Sao_Paulo
+
+# PARA AJUSTAR A HORA MANUALMENTE DESABILITAMOS O timedatectl NTP:
+>>(COMANDO) timedatectl set-ntp (valor booleano ou seja true ou false)- true=enabled e false=disabled
+>>(COMANDO) timedatectl set-time 20:00:00
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+# PARA EVITAR QUE O CENTOS 7 PEGUE HORAS DE OUTRO FUSO HORARIO
+# INSTALAMOS O SERVIDOR DE HORAS:
+>>(COMANDO) yum install -y ntp
+# DEPOIS DE INSTALADO EDITAMOS O ARQUIVO NTP QUE FICA NO DIRETORIO /etc, ADICIONAMOS OS ENDEREÇOS:
+>>(LINHA) a.ntp.br
+>>(LINHA) b.ntp.br
+>>(LINHA) c.ntp.br
+
+# ESTES SERVIDORES DE HORAS PODEM MUDAR, QUALQUER DIFICULDADE É SÓ DAR UMA VISITADA NO SITE: https://ntp.br/
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+# INSTALANDO AMBIENTE GRÁFICO GNOME
+>>(COMANDO) yum grouplist
+
+# ESCOLHA O GNOME E ENTÃO INSTALE
+>>(COMANDO) yum groups install "GNOME Desktop"
+
+#(Opcional)
+# Depois de instalado podem executar o seguinte comando, para que o sistema arranque directo para o ambiente gráfico.
+>>(COMANDO) systemctl set-default graphical.target
+
+# INICIALIZANDO A INTERFACE GRÁFICA 
+>>(COMANDO) systemctl start graphical.target
+

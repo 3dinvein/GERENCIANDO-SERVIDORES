@@ -1,0 +1,41 @@
+sudo apt-get install dovecot-core dovecot-imapd
+
+nano /etc/dovecot/dovecot.conf
+->listen=*,::
+
+sudo service dovecot restart
+sudo service dovecot status
+
+
+nano /etc/dovecot/conf.d/10-auth.conf
+-> disable_plaintext_auth = no
+-> auth_mechanisms = plain login
+
+nano /etc/dovecot/conf.d/10-mail.conf
+-> mail_location = maildir:~/Maildir
+
+nano /etc/dovecot/conf.d/10-mail.conf
+-> mail_location = maildir:~/Maildir
+
+nano /etc/dovecot/conf.d/10-master.conf
+-> unix_listener /var/spool/postfix/private/auth {
+mode = 0666
+user = postfix
+group = postfix
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

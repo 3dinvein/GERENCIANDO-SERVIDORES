@@ -1,0 +1,106 @@
+﻿Pré-requisitos:
+
+
+
+Primeiro é preciso atualizar o sistema, instalar o pacote epel-release,
+
+configurar o ip da placa de rede e internet, configurar o host + dominio, 
+
+configurar o seu Dns. Daí depois disso comece os passos abaixo:
+
+
+
+
+Link para fazer download do site:
+
+https://www.iredmail.org/download.html
+
+
+
+Instalação Iredmail no CentOS 7:
+
+https://docs.iredmail.org/install.iredmail.on.rhel.html
+
+
+
+Resumo da instalação:
+
+
+
+# cd /root/
+
+
+
+# wget https://bitbucket.org/zhb/iredmail/downloads/iRedMail-0.9.9.tar.bz2
+
+
+
+# tar xjf iRedMail-x.y.z.tar.bz2
+
+
+
+# cd /root/iRedMail-x.y.z/
+
+
+
+# bash iRedMail.sh
+
+
+
+
+================================================================================
+
+
+
+Agora vai abrir a parte gráfica da instalação:
+Responda o seguinte:
+
+
+
+# yes
+
+
+
+# Defina o local onde ficarão as caixas de email, por padrão fica no seguite 
+diretório: /var/vmail/
+
+
+
+# Escolha o seu database preferido: OpenLDAP, MySQL ou PostgreSQL
+
+
+
+# Defina seu dominio: exemplo.com
+
+
+
+# Defina seu primeiro dominio de email: mail.exemplo.com
+
+
+
+# Configure uma senha para o administrador do servidor de email, nesse caso
+é o postmaster@mail.exemplo.com
+
+
+
+# Escolha seus componentes para instalação. Eu recomendo selecionar todos.
+
+
+
+# Digite y e depois pressione Enter para começar a instalação.
+
+Depois de finalizado tudo OK!, irá aparecer as urls para você saber qual 
+endereço web você poderá ter acesso ao seu gerenciador de email, e webmail.
+
+
+FORMA DE ACESSAR O SEU SERVIDOR DE EMAIL:
+
+    Roundcube webmail: https://seu_servidor/mail/
+
+    SOGo Groupware: https://seu_servidor/SOGo
+
+    Web admin panel (iRedAdmin): httpS://seu_servidor/iredadmin/
+
+    Awstats: httpS://seu_servidor/awstats/awstats.pl?config=web (or ?config=smtp for SMTP traffic log)
+
+

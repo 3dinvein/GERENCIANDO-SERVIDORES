@@ -1,0 +1,19 @@
+Samba Domain Member
+Red Hat Enterprise Linux / CentOS / Scientific Linux
+
+# yum install autoconf automake gcc gdb krb5-devel krb5-workstation \
+   openldap-devel make pam-devel python-devel docbook-style-xsl \
+   libacl-devel libattr-devel libxslt 
+
+
+
+Samba Domain Controller
+Red Hat Enterprise Linux / CentOS / Scientific Linux
+
+# yum install attr bind-utils docbook-style-xsl gcc gdb krb5-workstation \
+       libsemanage-python libxslt perl perl-ExtUtils-MakeMaker \
+       perl-Parse-Yapp perl-Test-Base pkgconfig policycoreutils-python \
+       python2-crypto gnutls-devel libattr-devel keyutils-libs-devel \
+       libacl-devel libaio-devel libblkid-devel libxml2-devel openldap-devel \
+       pam-devel popt-devel python-devel readline-devel zlib-devel systemd-devel \
+       lmdb-devel jansson-devel gpgme-devel pygpgme libarchive-devel

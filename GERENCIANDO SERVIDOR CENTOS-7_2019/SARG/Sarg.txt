@@ -1,0 +1,60 @@
+# arquivo de configuração ( sarg.conf )
+#
+# A linguagem do relatório fica a seu critério
+language Portuguese
+# o caminho do arquivo de log do squid
+access_log /var/log/squid/access.log
+# O título do seu relatório ou seja o nome que você quiser apresentar no relatório
+title "Relatório Lan-House Grif"
+# A fonte do relatório
+font_face Tahoma,Verdana,Arial
+header_color darkblue
+header_bgcolor blanchedalmond
+# tamanho da font
+font_size 9px
+# cor de fundo do relatório
+background_color white
+text_color #000000
+text_bgcolor lavender
+title_color green
+# Arquivo temporário do sarg
+temporary_dir /tmp
+caminho que gerará os relatórios.#
+output_dir /var/www/squid-reports
+resolve_ip
+user_ip no
+topuser_sort_field BYTES reverse
+user_sort_field BYTES reverse
+exclude_users /etc/squid/sarg.users
+exclude_hosts /etc/squid/sarg.hosts
+date_format u
+lastlog 0
+remove_temp_files yes
+index yes
+index_tree file
+overwrite_report yes
+records_without_userid ip
+use_comma yes
+mail_utility mail
+# O número de sites que irá exibir no relatório.
+topsites_num 100
+topsites_sort_order CONNECT D
+index_sort_order D
+exclude_codes /etc/squid/sarg.exclude_codes
+max_elapsed 28800000
+# Todo conteúdo a ser exibido pelo sarg aqui você pode deixar bem enxuto seu relatório,
+# ou seja, mostrar apenas as maiores necessidades.
+report_type topusers topsites sites_users users_sites date_time denied auth_failures site_user_time_date downloads
+usertab /etc/squid/sarg.usertab
+# Nesta linha mude para yes para evitar futuros problemas de desfragmentação ainda não descoberto.
+long_url no
+date_time_by bytes
+charset Latin1
+# show successful habilitar para yes para exibir após o comando sarg que o relatório gerou com sucesso
+show_successful_message no
+show_read_statistics no
+topuser_fields NUM DATE_TIME USERID CONNECT BYTES %BYTES IN-CACHE-OUT USED_TIME MILISEC %TIME TOTAL AVERAGE
+user_report_fields CONNECT BYTES %BYTES IN-CACHE-OUT USED_TIME MILISEC %TIME TOTAL AVERAGE
+topuser_num 0
+site_user_time_date_type table
+download_suffix "zip,arj,bzip,gz,ace,doc,iso,adt,bin,cab,com,dot,drv$, lha,lzh,mdb,mso,ppt,rtf,src,shs,sys,exe,dll,mp3,avi,mpg,mpeg" 

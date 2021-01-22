@@ -1,0 +1,53 @@
+<< INSTALANDO O FTP >>
+1- yum install -y vsftpd
+
+<< ENTRANDO NO DIRETÓRIO VSFTPD >> 
+2- cd /etc/vsftpd/
+
+<< EDITAR O ARQUIVO VSFTPD.CONF >>
+3- vi vsftpd.conf
+   >>anonymous_enable=NO
+   >>userlist_enable=NO
+   >>ESC :wq
+
+<< EDITAR O ARQUIVO (user_list) NO DIRETÓRIO /etc/vsftpd/ >>
+4- vi /etc/vsftpd/user_list
+   >>Adicione o nome de usuário responsável pelo seu ftp 
+   >>ESC :wq
+
+<< INICIAR E COLOCAR PARA INICIAR JUNTO DO SYSTEMA >>
+5- systemctl start vsftpd 
+   systemctl enable vsftpd
+
+<< DANDO PERMISSÃO NO FIREWALLD >>
+6- firewall-cmd --permanent --add-service=ftp
+   firewall-cmd --permanent --add-port=21/tcp
+   firewall-cmd --permanent --add-port=22/tcp
+   firewall-cmd --reload
+   Se não tiver passando internet pra rede, verifique sua internet, 
+   ou o arquivo (ip_forward) do diretório /proc/sys/net/ipv4/ip_forward. Ele tem que estar com o valor 1.
+   E libere internet em toda sua rede com o comando: firewall-cmd --permanent --add-mascarade 
+
+<< CRIANDO O USUÁRIO E A ESTRUTURA DO FTP >>
+7- useradd -m bart -g ftp
+   passwd bart 
+   cd /home/bart/
+   mkdir simpsons
+   cd simpsons
+   touch videos.txt
+
+<< TESTANDO O FTP >>
+<< BAIXE O FILEZILLA OU ABRA O NAVEGADOR E DIGITE >>
+Exemplo1->> ftp://192.168.5.1
+Exemplo2->> ftp://servidor.dominio.local
+   
+<< COLOQUE O USUARIO E SENHA QUE VOCE DEFINIU PARA USAR O FTP >>
+
+FEITO!!!
+
+
+SÓ PRA LEMBRAR QUE O FTP É NORMALMENTE USADO PARA REPOSITÓRIOS, E É QUASE SEMPRE USADO JUNTAMENTE COM O SERVIDOR WEB.
+PARA CRIAR SUA PRÓPRIA HOSPEDAGEM FREE, LEIA SOBRE A INSTALAÇÃO DO PROGRAMA ISPCONFIG, PRA CENTOS 7.
+
+ABRAÇO!!!
+ 

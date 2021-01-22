@@ -1,0 +1,50 @@
+Gerar uma chave privada e um CSR
+
+openssl req -newkey rsa:2048 -nodes -keyout domain.key -out domain.csr
+
+
+Gerar um CSR de uma chave privada existente
+Use este método se você já tiver uma chave privada que gostaria de usar para solicitar um certificado de uma autoridade de certificação.
+
+openssl req -key domain.key -new -out domain.csr
+
+Gerar um CSR a partir de um certificado e uma chave privada existentes
+Use esse método se quiser renovar um certificado existente, mas você ou sua CA não têm o CSR original por algum motivo. Basicamente, você evita o trabalho de reinserir as informações de CSR, pois extrai essas informações do certificado existente.
+
+Esse comando cria um novo CSR ( domain.csr) com base em um certificado ( domain.crt) e uma chave privada ( domain.key) existentes:
+
+openssl x509 -in domain.crt -signkey domain.key -x509toreq -out domain.csr
+
+
+Gerando Certificados SSL
+Se você quiser usar um certificado SSL para proteger um serviço, mas não precisar de um certificado assinado por uma CA, uma solução válida (e gratuita) é assinar seus próprios certificados.
+
+Um tipo comum de certificado que você pode emitir é um certificado autoassinado . Um certificado autoassinado é um certificado assinado com sua própria chave privada. Os certificados autoassinados podem ser usados ​​para criptografar dados tão bem quanto os certificados assinados pela CA, mas os usuários receberão um aviso informando que o certificado não é confiável para seu computador ou navegador. Portanto, os certificados auto-assinados só devem ser usados ​​se você não precisar provar a identidade do seu serviço para seus usuários (por exemplo, servidores que não são de produção ou não públicos).
+
+Esta seção aborda os comandos do OpenSSL relacionados à geração de certificados autoassinados.
+
+Gerar um certificado autoassinado
+
+openssl req -newkey rsa:2048 -nodes -keyout domain.key -x509 -days 365 -out domain.crt
+
+
+
+Gerar um certificado autoassinado a partir de uma chave privada existente
+Use este método se você já tiver uma chave privada que gostaria de gerar um certificado autoassinado com ela.
+
+Este comando cria um certificado auto-assinado ( domain.crt) a partir de uma chave privada existente ( domain.key):
+
+openssl req -key domain.key -new -x509 -days 365 -out domain.crt
+
+
+Gerar um certificado autoassinado a partir de uma chave privada e CSR existente
+Use esse método se você já tiver uma chave privada e um CSR e quiser gerar um certificado autoassinado com eles.
+
+Este comando cria um certificado autoassinado ( domain.crt) a partir de uma chave privada existente ( domain.key) e ( domain.csr):
+
+openssl x509 -signkey domain.key -in domain.csr -req -days 365 -out domain.crt
+
+
+
+Referência:
+https://www.digitalocean.com/community/tutorials/openssl-essentials-working-with-ssl-certificates-private-keys-and-csrs

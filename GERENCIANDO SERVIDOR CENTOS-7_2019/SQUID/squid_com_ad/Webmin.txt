@@ -1,0 +1,27 @@
+CRIE UM REPOSITÓRIO
+vim /etc/yum.repos.d/webmin.repo
+
+COPIE E COLE
+
+[Webmin]
+name=Webmin Distribution Neutral
+baseurl=http://download.webmin.com/download/yum
+enabled=1
+gpgcheck=1
+gpgkey=http://www.webmin.com/jcameron-key.asc 
+
+
+yum -y update
+
+yum -y install webmin
+
+acessar o webmin https://192.168.5.1:10000
+
+Firewalld
+
+firewall-cmd --zone=public --add-port=10000/tcp --permanent
+firewall-cmd --reload
+
+
+
+

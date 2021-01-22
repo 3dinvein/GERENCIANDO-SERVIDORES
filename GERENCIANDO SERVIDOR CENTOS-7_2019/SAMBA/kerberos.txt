@@ -1,0 +1,24 @@
+[libdefaults]
+  default_realm = SAMBA.LOCAL
+  
+   [realms]
+   SAMBA.LOCAL = {
+   kdc = srv01.samba.local
+   }
+   
+   [domain_realm]
+  .kerberos.server = SAMBA.LOCAL
+  
+  [logging]
+  default = SYSLOG:NOTICE:DAEMON
+  kdc = FILE:/var/log/kdc.log
+  kadmind = FILE:/var/log/kadmind.log
+ 
+  [appdefaults]
+  pam = {
+  ticket_lifetime = 1d
+  renew_lifetime = 1d
+  forwardable = true
+  proxiable = false
+  }
+

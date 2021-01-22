@@ -1,0 +1,126 @@
+Instalando o apache
+
+﻿sudo yum install httpd
+
+sudo systemctl start httpd
+
+sudo systemctl enable httpd
+
+///////////////////////////////////////////////////////////////
+
+Instalando o MariaDB
+
+sudo yum install mariadb-server mariadb-client
+
+sudo systemctl start mariadb
+
+sudo systemctl enable mariadb
+
+sudo mysql_secure_installation 
+-->> [enter]
+-->> defina uma senha
+-->> y para todas as outras opções. 
+
+//////////////////////////////////////////////////////////////
+
+
+Instalando o PHP7:
+
+sudo yum install php php-mysql php-fpm 
+
+sudo vi /etc/php.ini
+
+aperte ESC e depois /cgi.fix_pathinfo, aperte N para ir para a próxima linha
+então descomente essa linha e mude  o valor de para 0, algo assim: cgi.fix_pathinfo=0
+
+sudo vi /etc/php-fpm.d/www.conf
+
+comentar linha:   listen=127.0.0.1:9000
+
+adicionar linha:  listen = /var/run/php-fpm.sock
+
+descomentar linhas: listen.owner=nobody e listen.group=nobody
+
+sudo systemctl start php-fpm
+sudo systemctl enable php-fpm
+
+//////////////////////////////////////////////////////////////
+
+cd /var/www/html/
+sudo mkdir sites
+
+sudo chown apache:apache -R sites
+
+sudo vi sites/index.php
+
+cd /etc/httpd/
+sudo mkdir sites-available
+sudo mkdir sites-enabled
+
+sudo vi /etc/httpd/conf/httpd.conf
+
+Adicione esta linha no final do seu arquivo:
+
+IncludeOptional sites-enabled/*.conf
+
+cd sites-avaiable
+
+sudo vi site1.com.conf
+
+<VirtualHost *:80>
+ServerName www.meusite.com.br
+ServerAlias meusite.com.br
+DocumentRoot /var/www/html/sites/
+ErrorLog /var/log/httpd/error_log.log
+CustomLog /var/log/httpd/access_log.log combined
+</VirtualHost>
+
+sudo ln -s /etc/httpd/sites-available/site1.com.conf /etc/httpd/sites-enabled/site1.com.conf
+
+sudo service httpd restart
+
+Desabilitar o selinux:
+
+sudo setenfoce 0
+
+sudo systemctl reload httpd
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Testando paginas web:
+
+sudo yum install curl links
+
+usando o navegador no terminal com o links: links http://www.meusite.com.br 
+
+testar codigo e reposta de site: curl http://icanhazip.com
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Testando o PHP:
+
+php --version
+
+sudo vim /var/www/html/test.php
+
+Cole o seguinte código PHP no arquivo:
+<?php phpinfo(); ?>
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+systemctl stop firewalld
+
+ou outro assunto
+
+sudo firewall-cmd --permanent --add-service=http
+
+Para ver todos os serviços que podemos abrir as portas pela lista default basta digitar:
+
+sudo firewall-cmd --get-services
+
+Para abrir uma porta que não esta listada nos serviços podemos usar o seguinte comando:
+
+sudo firewall-cmd --permanent --add-port=80/tcp
+

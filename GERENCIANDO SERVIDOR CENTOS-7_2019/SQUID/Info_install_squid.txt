@@ -1,0 +1,53 @@
+Serve para acrescentar uma opcão a mais de atualização de serviços do CentOS 
+yum -y install epel-release
+
+Caso não de certo basta ir no seguinte endereço web:
+https://dl.fedoraproject.org/pub/epel/7Server/x86_64/Packages/e/epel-release-7-11.noarch.rpm ou
+https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm
+
+pra instalar esse pacote é bem simples mas precisaremos do wget instalado:
+1- yum install wget -y
+2- wget https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm
+3 - rpm -ivh epel-release-7-11.noarch.rpm
+Esse rpm é como se fosse o dpkg do debian, só que esse é para distribuições derivadas do redhat.
+o -i do comando é = instalar, o v significa verbose= mostrar informações do pacote, e o h mostra a porcentagem de instalação do pacote.
+
+------------------------------------------------------------------------------------------------------------------
+
+Para instalar o squid digite no terminal o comando:
+yum install squid -y
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+mkdir /etc/squid/regras
+
+touch /etc/squid/regras/sites_bloqueados
+touch /etc/squid/regras/sites_liberados
+
+echo ".bol." >> /etc/squid/regras/sites_liberados
+echo ".uol." >> /etc/squid/regras/sites_liberados
+echo ".terra." >> /etc/squid/regras/sites_liberados
+
+echo ".globo." >> /etc/squid/regras/sites_bloqueados
+echo ".baixaki." >> /etc/squid/regras/sites_bloqueados
+echo ".mercadolivre." >> /etc/squid/regras/sites_bloqueados
+
+chown -Rf squid:squid /etc/squid/regras/
+
+yum -y install httpd
+
+htpasswd -c /etc/squid/usuarios admin
+
+Para os demais usuários utilize:
+
+htpasswd /etc/squid/usuarios admin2
+
+Iniciando diretórios do cache
+squid -z
+
+Iniciando o squid
+systemctl start squid
+
+Habilitando squid para inicializar com sistema
+systemctl enable squid

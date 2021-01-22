@@ -1,0 +1,135 @@
+ #### Autenticacao NTLM ####
+  auth_param ntlm program /usr/bin/ntlm_auth --helper-protocol=squid-2.5-ntlmssp
+  auth_param ntlm children 50
+ auth_param ntlm keep_alive on
+   ###########################
+ 
+  dns_nameservers 192.168.2.5 200.225.197.37 200.225.197.34
+ 
+  #### CAIXA ####
+  acl caixa dstdomain caixa .unicesumar.edu.br
+ ###############
+ 
+ ### SITES SEM AUTENTICACAO ###
+  acl sites_sem_autenticacao url_regex "/etc/squid/rules/sites_sem_restricao"
+  ##############################
+
+ acl receita url_regex -i .gov.br
+ acl receita2 port 443
+
+  #### JAVA ####
+acl Java browser Java/1.4 Java/1.5 Java/1.6
+  ##############
+
+ acl password proxy_auth REQUIRED
+ 
+ ##### Grupos do AD ####
+ #external_acl_type grupos_nt children=10 %LOGIN /usr/lib/squid/wbinfo_group.pl
+ external_acl_type grupos_nt children=10 %LOGIN /usr/lib64/squid/ext_wbinfo_group_acl
+  #
+ acl acesso_restrito external grupos_nt etcr-internet_restrita
+ acl acesso_liberado external grupos_nt etcr-internet_liberada
+ acl acesso_redes_sociais external grupos_nt etcr-redes_sociais
+ acl acesso_multimidia external grupos_nt etcr-acesso_multimidia
+  acl acesso_bancos external grupos_nt etcr-acesso_bancos
+  acl sites_bloqueados url_regex -i "/etc/squid/rules/sites_bloqueados"
+ #######################
+ 
+ #### Conteudos Liberados ou Bloqueados ####
+ acl sites_liberados url_regex -i "/etc/squid/rules/sites_liberados"
+ acl sites_redes_sociais url_regex -i "/etc/squid/rules/sites_redes_sociais"
+  acl sites_redes_multimidias url_regex -i "/etc/squid/rules/sites_redes_multimidias"
+ acl extensoes_bloqueadas urlpath_regex -i "/etc/squid/rules/extensoes_bloqueadas"
+  acl sites_bancos url_regex -i "/etc/squid/rules/sites_de_bancos_liberados"
+ acl sites_bancos url_regex -i "/etc/squid/rules/sites_de_bancos_liberados"
+  acl manager proto cache_object
+ acl localhost src 127.0.0.1/32
+ ###########################################
+
+  acl to_localhost dst 127.0.0.0/8
+ acl rede_etcr src 192.168.2.0/24
+ acl SSL_ports port 443
+
+ #### ACLS Para as Redes ####
+ acl Safe_ports port 80
+ ############################
+
+ acl Safe_ports port 21
+ acl Safe_ports port 443 # http
+ acl Safe_ports port 70 # ftp
+ acl Safe_ports port 210 # https
+ acl Safe_ports port 1025-65535 # gopher
+ acl Safe_ports port 280 # wais
+  acl Safe_ports port 488 # unregistered ports
+ acl Safe_ports port 591 # http-mgmt
+ acl Safe_ports port 777 # gss-http
+ acl Safe_ports port 1863 # filemaker
+ acl Safe_ports port 3390 #
+ acl CONNECT method CONNECT # multiling http
+  http_access allow caixa
+ http_access allow sites_sem_autenticacao
+ http_access allow receita receita2 !sites_bloqueados
+  http_access allow Java
+ #### Acessos Baseados Nas ACLS ####
+ #http_access allow acesso_liberado
+ #http_access deny sites_bloqueados
+ #http_access allow acesso_restrito
+ #http_access allow acesso_redes_sociais
+ #http_access allow password sites_liberados
+ #http_access allow rede_etcr sites_liberados
+ #
+ # Acesso liberado - OK
+ http_access allow acesso_liberado
+  # Acesso redes sociais - OK
+ http_access allow acesso_redes_sociais sites_redes_sociais
+ http_access allow acesso_redes_sociais !sites_bloqueados
+ # Acesso banco - OK
+http_access allow acesso_bancos sites_bancos
+ http_access allow acesso_restrito !sites_bloqueados
+  # Acesso multimidia - OK
+ http_access allow acesso_multimidia sites_redes_multimidias
+ http_access allow acesso_multimidia !sites_bloqueados
+ # Acesso restrito - OK
+ http_access allow acesso_bancos !sites_bloqueados
+  # Default
+ http_access allow password sites_liberados
+ http_access allow sites_liberados rede_etcr
+ ###################################
+ http_access allow manager localhost
+ http_access deny manager
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access allow localhost
+icp_access allow rede_etcr
+http_port 3128
+hierarchy_stoplist cgi-bin ?
+access_log /var/log/squid/access.log squid
+
+coredump_dir /var/cache/squid
+
+### CACHE ###
+refresh_pattern -i \.(html|htm|html\?|htm\?)$ 9440 90% 100000 override-expire reload-into-ims
+refresh_pattern -i \.(gif|png|jpg|jpeg|ico|bmp|tiff|webp|bif|gif\?|png\?|jpg\?|jpeg\?|ico\?|bmp\?|tiff\?|webp\?|bif\?)$ 36000 90% 100000 override-expire reload-into    -ims ignore-reload
+refresh_pattern \.(swf|swf\?|js|js\?|wav|css|css\?|class|dat|zsci)$ 36000 90% 100000 override-expire reload-into-ims
+refresh_pattern -i \.(bin|deb|rpm|exe|zip|tar|tgz|ram|rar|bin|ppt|doc|docx|tiff|pdf|uxx|gz|xls|xlsx|psd|crl|msi|dll|dll\?|crx|enc|skl|arc)$ 36000 90% 100000 overrid    e-expire override-lastmod reload-into-ims ignore-reload
+refresh_pattern -i \.(xml)$ 0 90% 100000
+refresh_pattern -i \.(json|json\?)$ 1440 90% 5760 override-expire reload-into-ims
+refresh_pattern -i (/cgi-bin/|\?) 0 0% 0
+refresh_pattern ^ftp: 5440 90% 10080
+refresh_pattern ^gopher: 1440 0% 1440
+refresh_pattern -i . 0 90% 5760
+icp_port 3130
+
+### DESCRIPTORS ###
+max_filedesc 8192
+###################
+### SQUID CACHE ###
+ cache_mem 512 MB
+cache_dir ufs /var/spool/squid 10240 16 256
+###################
+
+deny_info https://www.instagram.com/ acesso_redes_sociais
+deny_info https://www.instagram.com/ acesso_multimidia
+deny_info http://learn.chm.msu.edu/vibl/content/gramstain/gramstain/index.html acesso_liberado
+
+

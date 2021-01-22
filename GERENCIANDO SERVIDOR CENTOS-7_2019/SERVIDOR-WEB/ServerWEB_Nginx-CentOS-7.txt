@@ -1,0 +1,175 @@
+Instalando o NGINX
+
+sudo yum install nginx
+
+sudo systemctl start nginx
+
+sudo systemctl enable nginx
+
+///////////////////////////////////////////////////////////////
+
+Instalando o MariaDB
+
+sudo yum install mariadb-server mariadb-client
+
+sudo systemctl start mariadb
+
+sudo systemctl enable mariadb
+
+sudo mysql_secure_installation 
+-->> [enter]
+-->> defina uma senha
+-->> y para todas as outras opções. 
+
+//////////////////////////////////////////////////////////////
+
+Instalando o PHP:
+
+sudo yum install php php-mysql php-fpm 
+
+sudo vi /etc/php.ini
+
+aperte ESC e depois /cgi.fix_pathinfo, aperte N para ir para a próxima linha
+então descomente essa linha e mude  o valor de para 0, algo assim: cgi.fix_pathinfo=0
+
+sudo vi /etc/php-fpm.d/www.conf
+
+comentar linha:   listen=127.0.0.1:9000
+
+adicionar linha:  listen = /var/run/php-fpm/php-fpm.sock
+
+descomentar linhas: listen.owner=nobody e listen.group=nobody
+
+procure por user = apache e group = apache, depois troque nome apache por nginx. Ficando assim:
+user  = nginx
+group = nginx
+
+depois saia salvando esse arquivo.
+
+No terminal digite:
+
+sudo systemctl start php-fpm
+sudo systemctl enable php-fpm
+
+//////////////////////////////////////////////////////////////
+
+Editar arquivo /etc/hosts e adicionar mais um host:
+
+192.168.5.1 site.com www.site.com.br
+
+depois sair e salvar 
+ESC :wq
+
+//////////////////////////////////////////////////////////////
+
+
+Configurar alguns padrões no arquivo /etc/nginx/nginx.conf
+
+include /etc/nginx/conf.d/*.conf
+
+server {
+ listen 80 default_server;
+ listen [::]:80 default_server;
+ server_name _;
+ root /usr/share/nginx/html;
+ index index.php index.html index.htm;
+
+ include /etc/nginx/default.d/*.conf
+	
+location / {
+ try_files $uri $uri/ =404;
+ }
+
+
+//////////////////////////////////////////////////////////////
+
+Criar arquivo em /etc/nginx/default.d/php.conf
+
+#Esse arquivo é responsável por iniciar junto do nginx.
+
+location ~ \.php$ {
+ try_files $uri/ =404;
+ fastcgi_pass unix:/run/php-fpm/php-fpm.sock;
+ fastcgi_index index.php;
+ fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+ include fastcgi_params;
+ }
+
+//////////////////////////////////////////////////////////////
+
+Criar arquivo em /etc/nginx/conf.d/site.conf
+
+server {
+ listen 80;
+ listen [::]:80;
+ root /usr/share/nginx/site/html;
+ index index.php index.html index.htm;
+ server_name site.com www.site.com;
+
+ include /etc/nginx/default.d/*.conf
+
+location / {
+ try_files $uri $uri/ =404;
+ }
+
+//////////////////////////////////////////////////////////////
+
+Criar o diretório responsável por hospedar o nosso site:
+
+sudo mkdir -p /usr/share/nginx/site/html
+
+Adicionar o diretório ao grupo do nginx:
+
+sudo chown -R nginx:nginx /usr/share/nginx/site/html
+
+Criar duas páginas para o nosso site no seguinte diretório:
+
+vim /usr/share/nginx/site/html/index.html
+-> digite:  
+PAGINA DO NO SITE.COM
+depois saia salvando com ESC :wq
+
+vim /usr/share/nginx/site/html/info.php
+-> digite: 
+<?php phpinfo();?>
+depois saia salvando com ESC :wq
+
+//////////////////////////////////////////////////////////////
+
+Inicializar ou reinicializar o php e o nginx:
+
+sudo systemctl restart php-fpm
+sudo systemctl restart nginx
+
+//////////////////////////////////////////////////////////////
+
+Teste feito para saber se está funcionando digite no terminal:
+
+links http://www.site.com
+
+--> Deve aparecer nossa página HTML.
+
+links http://www.site.com/info.php
+
+--> Deve aparecer a página padrão do php.
+
+//////////////////////////////////////////////////////////////
+
+Se por acaso nos navegadores das estações de trabalho não pegarem, 
+provavelmente seja o firewall.
+
+Você terá que liberar a porta 80 para que os outros computadores possam te enxergar.
+
+Digite o seguinte comando:
+
+iptables -I INPUT 1 -p tcp --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT 
+
+Ou então se preferir digite:
+
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-port=80/tcp
+
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --permanent --add-port=443/tcp
+

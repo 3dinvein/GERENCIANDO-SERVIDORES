@@ -1,0 +1,10 @@
+### TS ###
+### USA QUANDO PRECISA CONEXÕES REMOTAS DE FORA PARA DENTRO ###
+-A PREROUTING -d 187.26.15.244/32 -p tcp -m tcp --dport 3390 -j DNAT --to-destination 192.168.5.5:3389
+
+
+### USA QUANDO PRECISA SAIR DE DENTRO PARA FORA ###
+-A POSTROUTING -p tcp -m tcp --dport 25 -j SNAT --to-source 187.26.15.244 ###
+
+### USA QUANDO PRECISA MUDAR O ACESSO DE UMA PORTA PARA A OUTRA ###
+iptables -t nat -A PREROUTING -d 187.26.15.244/32 -p tcp --dport 80 -j REDIRECT --to-port 3128
